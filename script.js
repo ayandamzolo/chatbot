@@ -1,11 +1,23 @@
-var conversationHistory = [];
-var chatContainer = document.getElementById("chat-container");
-var startContainer = document.getElementById("start-container");
+let conversationHistory = [];
+const chatContainer = document.getElementById("chat-container");
+const startContainer = document.getElementById("start-container");
+var responseMessages = {
+  greetings: [
+    "Hi there! How can I help you?",
+    "Hey there! Want me to make your day with jokes, or help you with some math calculations."
+  ],
+  unknown: "I'm not sure how to respond to that. Ask me about jokes, or calculations.",
+  weatherPrompt: "Please enter your location for weather information.",
+  fetchingWeather: "Checking the weather...",
+  weatherError: "Sorry, there was an error fetching the weather.",
+  jokeFetching: "Fetching a random joke...",
+  jokeError: "Sorry, I couldn't fetch a joke at the moment."
+};
 
 function startChat() {
   startContainer.style.display = "none";
   chatContainer.style.display = "block";
-  appendMessage("bot", "Hello!");
+  respondToUser(responseMessages.greetings[1]);
 }
 
 function sendMessage() {
@@ -17,16 +29,76 @@ function sendMessage() {
     userInput.value = "";
     processUserMessage(message);
   }
+  
 }
 
-var jokes = [
-  "Why did the bicycle fall over? It was two-tired!",
-  "What did one wall say to the other wall? I'll meet you at the corner.",
-  "I'm on a whiskey diet. I've lost three days already!",
-  "Why don't scientists trust atoms? Because they make up everything!",
-  "I told my wife she should embrace her mistakes. She gave me a hug.",
-  "I used to play piano by ear, but now I use my hands and fingers."
-];
+const userInput = document.getElementById("user-input");
+userInput.addEventListener("keypress", function(event) {
+  if (event.key === "Enter") {
+    sendMessage();
+  }});
+
+function processUserMessage(userMessage) {
+  conversationHistory.push({ sender: "user", message: userMessage });
+
+  if (userMessage.toLowerCase().includes("hello") && userMessage.length === 5|| userMessage.toLowerCase().includes("hi") && userMessage.length === 2 || userMessage.toLowerCase().includes("hey") && userMessage.length === 3) {
+    respondToUser(responseMessages.greetings[0]);
+  } else if (userMessage.toLowerCase().includes("how are you")) {
+    respondToUser("I'm just a computer program, but thanks for asking!");
+  } else if (userMessage.toLowerCase().includes("weather")) {
+    askForLocation();
+  } else if (userMessage.toLowerCase().includes("news")) {
+    performNewsAction();
+  } else if (userMessage.toLowerCase().includes("joke")) {
+    performJokeAction();
+  }else if (
+    userMessage.toLowerCase().includes("calculate") ||
+    userMessage.toLowerCase().includes("what is") ||
+    userMessage.toLowerCase().includes("give me the") ||
+    userMessage.toLowerCase().includes("+") ||
+    userMessage.toLowerCase().includes("-") ||
+    userMessage.toLowerCase().includes("*") ||
+    userMessage.toLowerCase().includes("/")
+  ) {
+    performCalculationAction(userMessage);
+  } else {
+    respondToUser(responseMessages.unknown);
+  }
+}
+
+/*function askForLocation() {
+  respondToUser("Please enter your location for weather information.");
+}
+
+function processLocation(location) {
+  performWeatherAction(location);
+}
+
+function performWeatherAction(location) {
+  var apiKey = process.env.WEATHER_API_KEY;
+
+  var apiUrl = `http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${location}`;
+
+  appendMessage("bot", "Checking the weather...");
+
+  fetch(apiUrl)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      var weatherResponse = `The current weather in ${data.location.name} is ${data.current.condition.text} with a temperature of ${data.current.temp_c}°C.`;
+      appendMessage("bot", weatherResponse);
+      conversationHistory.push({ sender: "bot", message: weatherResponse });
+    })
+    .catch(error => {
+      console.error('Error fetching weather:', error);
+      appendMessage("bot", "Sorry, there was an error fetching the weather.");
+      conversationHistory.push({ sender: "bot", message: "Sorry, there was an error fetching the weather." });
+    });
+}
 
 var newsHeadlines = [
   "Scientists discover new planet with the potential for life.",
@@ -36,38 +108,40 @@ var newsHeadlines = [
   "Environmental initiatives gain momentum with new policies and agreements.",
   "Exciting developments in space exploration as new missions are planned."
 ];
-
-function processUserMessage(userMessage) {
-  conversationHistory.push({ sender: "user", message: userMessage });
-
-  if (userMessage.toLowerCase().includes("hello") || userMessage.toLowerCase().includes("hi")) {
-    respondToUser("Hi there! How can I help you?");
-  } else if (userMessage.toLowerCase().includes("how are you")) {
-    respondToUser("I'm just a computer program, but thanks for asking!");
-  } else if (userMessage.toLowerCase().includes("weather")) {
-    performWeatherAction();
-  } else if (userMessage.toLowerCase().includes("news")) {
-    performNewsAction();
-  } else if (userMessage.toLowerCase().includes("joke")) {
-    performJokeAction();
-  } else if (userMessage.toLowerCase().includes("calculate")) {
-    performCalculationAction(userMessage);
-  } else {
-    respondToUser("I'm not sure how to respond to that. Ask me something else?");
-  }
-}
+*/
 
 function performJokeAction() {
+  var apiUrl = 'https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit';
+
   appendMessage("bot", "Fetching a random joke...");
 
-  setTimeout(function() {
-    var randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
-    appendMessage("bot", randomJoke);
-    conversationHistory.push({ sender: "bot", message: randomJoke });
-  }, 2000);
-}
+  fetch(apiUrl)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      var jokeResponse;
+      if (data.type === 'single') {
+        jokeResponse = data.joke;
+      } else if (data.type === 'twopart') {
+        jokeResponse = `${data.setup} ${data.delivery}`;
+      } else {
+        jokeResponse = "Oops, I couldn't fetch a joke this time.";
+      }
+      appendMessage("bot", jokeResponse);
+      conversationHistory.push({ sender: "bot", message: jokeResponse });
+    })
+    .catch(error => {
+      console.error('Error fetching joke:', error);
+      appendMessage("bot", "Sorry, I couldn't fetch a joke at the moment.");
+      conversationHistory.push({ sender: "bot", message: "Sorry, I couldn't fetch a joke at the moment." });
+    });
+  }
 
-function performNewsAction() {
+/*function performNewsAction() {
   appendMessage("bot", "Fetching the latest news headlines...");
 
   setTimeout(function() {
@@ -76,32 +150,104 @@ function performNewsAction() {
     conversationHistory.push({ sender: "bot", message: randomNews });
   }, 2000);
 }
-
-function performWeatherAction() {
-  appendMessage("bot", "Checking the weather...");
-
-  setTimeout(function() {
-    var weatherResponse = "The weather is currently sunny. How can I assist you further?";
-    appendMessage("bot", weatherResponse);
-    conversationHistory.push({ sender: "bot", message: weatherResponse });
-  }, 1500);
-}
+*/
 
 function performCalculationAction(userMessage) {
-  var expression = userMessage.replace(/[^-()\d/*+.]/g, '');
+  var mathRegex = /(?:what is|calculate|give me (?:the )?(sum|difference|product) of)(?:\s*(-?\d+(\.\d+)?))?(?:\s*(plus|add|\+|minus|subtract|\-|times|multiplied by|\*|divided by|over|\/)\s*(-?\d+(\.\d+)?))?/i;
 
-  try {
-    var result = eval(expression);
-    appendMessage("bot", "The result is: " + result);
-    conversationHistory.push({ sender: "bot", message: "The result is: " + result });
-  } catch (error) {
-    appendMessage("bot", "Sorry, I couldn't calculate that. Please provide a valid expression.");
-    conversationHistory.push({
-      sender: "bot",
-      message: "Sorry, I couldn't calculate that. Please provide a valid expression."
-    });
+  var match = userMessage.match(mathRegex);
+
+  if (match) {
+    var operation = match[0].toLowerCase(); // Full matched operation
+    var num1 = parseFloat(match[2]); // First number
+    var operator = match[4]; // Mathematical operator (+, -, *, /)
+    var num2 = parseFloat(match[5]); // Second number (if present)
+
+    // Check if the first number is valid
+    if (isNaN(num1)) {
+      respondToUser("Invalid number provided. Please provide a valid numerical value.");
+      return;
+    }
+
+    // Map operator synonyms to standard mathematical symbols
+    switch (operator.toLowerCase()) {
+      case 'plus':
+      case 'add':
+      case 'and':
+      case '+':
+        operator = '+';
+        break;
+      case 'minus':
+      case 'subtract':
+      case 'from':
+      case '-':
+        operator = '-';
+        break;
+      case 'times':
+      case 'multiplied by':
+      case '*':
+        operator = '*';
+        break;
+      case 'divided by':
+      case 'over':
+      case '/':
+        operator = '/';
+        break;
+      default:
+        respondToUser("Invalid operator or operation. Please try again.");
+        return;
+    }
+
+    var result;
+    switch (operator) {
+      case '+':
+        if (!isNaN(num2)) {
+          result = num1 + num2;
+        } else {
+          respondToUser("Missing or invalid second number for addition.");
+          return;
+        }
+        break;
+      case '-':
+        if (!isNaN(num2)) {
+          result = num1 - num2;
+        } else {
+          respondToUser("Missing or invalid second number for subtraction.");
+          return;
+        }
+        break;
+      case '*':
+        if (!isNaN(num2)) {
+          result = num1 * num2;
+        } else {
+          respondToUser("Missing or invalid second number for multiplication.");
+          return;
+        }
+        break;
+      case '/':
+        if (!isNaN(num2) && num2 !== 0) {
+          result = num1 / num2;
+        } else if (num2 === 0) {
+          respondToUser("Cannot divide by zero. Please provide a valid division.");
+          return;
+        } else {
+          respondToUser("Missing or invalid second number for division.");
+          return;
+        }
+        break;
+      default:
+        respondToUser("Invalid operation. Please try again.");
+        return;
+    }
+
+    var response = `The result of "${operation}" is ${result}.`;
+    respondToUser(response);
+  } else {
+    respondToUser("Sorry, I couldn't understand the math expression. Please try again.");
   }
 }
+
+
 
 
 function respondToUser(response) {
